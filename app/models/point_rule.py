@@ -1,9 +1,7 @@
 from sqlalchemy import Column, Integer, String, Float
-from sqlalchemy.ext.declarative import declarative_base
+from app.models.base import TenantBase
 
-Base = declarative_base()
-
-class PointRule(Base):
+class PointRule(TenantBase):
     __tablename__ = "point_rules"
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=False)

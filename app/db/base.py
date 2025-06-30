@@ -1,6 +1,5 @@
 from app.models.merchant import Base as MerchantBase
-from app.models.point_rule import Base as PointRuleBase
-from app.models.point_log import Base as PointLogBase
+from app.models.base import TenantBase
 
 # For create_all, we need a single Base. We'll use MerchantBase for public schema,
-# and PointRuleBase/PointLogBase for tenant schemas.
+# and TenantBase for tenant schemas.

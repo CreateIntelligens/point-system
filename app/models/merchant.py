@@ -8,7 +8,7 @@ class Merchant(Base):
     __tablename__ = "merchants"
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, unique=True, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.now)
 
 class MerchantApiKey(Base):
     __tablename__ = "merchant_api_keys"
@@ -18,4 +18,4 @@ class MerchantApiKey(Base):
     expires_at = Column(DateTime, nullable=True)
     scope = Column(String, nullable=True)
     is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.now)

@@ -57,7 +57,7 @@ point-system/
     - `merchant_api_keys`：API Key、有效期限、權限、狀態
 - **每個 merchant schema**
     - `point_rules`：點數換算規則
-    - `point_logs`：點數操作紀錄（含 uid、balance，需考慮併發）
+    - `transactions`：點數操作紀錄（含 uid、balance，需考慮併發）
 
 ## 4. API 驗證與安全
 

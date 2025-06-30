@@ -1,8 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from sqlalchemy import text
 from app.db.session import get_db
 from app.models.merchant import Merchant, MerchantApiKey
+from app.models.base import TenantBase
+# Import models to register them with TenantBase metadata
+from app.models.point_rule import PointRule
+from app.models.transaction import Transaction
 from sqlalchemy.exc import IntegrityError
 import secrets
 from datetime import datetime, timedelta
@@ -19,6 +24,25 @@ async def register_merchant(name: str, db: AsyncSession = Depends(get_db)):
     except IntegrityError:
         await db.rollback()
         raise HTTPException(status_code=400, detail="Merchant already exists")
+
+    # Multi-tenancy: create schema and tables for merchant
+    schema_name = f"merchant_{merchant.id}"
+    await db.execute(text(f'CREATE SCHEMA IF NOT EXISTS "{schema_name}"'))
+    await db.commit()
+    # Set search_path and create tables in new schema
+    await db.execute(text(f'SET search_path TO "{schema_name}", public'))
+    
+    # Create tables in the new schema using engine
+    from app.db.session import engine
+    async with engine.begin() as conn:
+        # Set schema context for table creation
+        await conn.execute(text(f'SET search_path TO "{schema_name}", public'))
+        # Create all tenant tables (point_rules and transactions) with shared metadata
+        await conn.run_sync(TenantBase.metadata.create_all)
+    
+    await db.execute(text('SET search_path TO public'))
+    await db.commit()
+
     return {"code": 0, "message": "Merchant registered", "data": {"id": merchant.id, "name": merchant.name}}
 
 @router.get("/", summary="List all merchants")
@@ -38,7 +62,7 @@ async def get_merchant(merchant_id: int, db: AsyncSession = Depends(get_db)):
 @router.post("/{merchant_id}/apikey")
 async def create_api_key(merchant_id: int, expires_in_days: int = 30, db: AsyncSession = Depends(get_db)):
     api_key = secrets.token_urlsafe(32)
-    expires_at = datetime.utcnow() + timedelta(days=expires_in_days)
+    expires_at = datetime.now() + timedelta(days=expires_in_days)
     key = MerchantApiKey(
         merchant_id=merchant_id,
         api_key=api_key,

@@ -7,3 +7,5 @@ cython_debug/
 # Distribution / packaging
 .Python
 build/
+
+*.log

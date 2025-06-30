@@ -21,6 +21,7 @@ services:
       - ./app:/app/app
     environment:
       - DATABASE_URL=postgresql+asyncpg://point_admin:point_pass@db:5432/point_system
+      - TZ=Asia/Taipei
     ports:
       - "8030:8030"
     depends_on:
@@ -35,6 +36,7 @@ services:
       - ./gradio_ui:/app/gradio_ui
     environment:
       - API_BASE=http://app:8030/api/v1
+      - TZ=Asia/Taipei
     ports:
       - "7860:7860"
     depends_on:
