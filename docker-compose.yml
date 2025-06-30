@@ -1,0 +1,43 @@
+version: "3.9"
+services:
+  db:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_USER: point_admin
+      POSTGRES_PASSWORD: point_pass
+      POSTGRES_DB: point_system
+      TZ: Asia/Taipei
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+  app:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8030 --reload
+    volumes:
+      - ./app:/app/app
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://point_admin:point_pass@db:5432/point_system
+    ports:
+      - "8030:8030"
+    depends_on:
+      - db
+
+  gradio:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    command: python gradio_ui/admin_panel.py
+    volumes:
+      - ./gradio_ui:/app/gradio_ui
+    environment:
+      - API_BASE=http://app:8030/api/v1
+    ports:
+      - "7860:7860"
+    depends_on:
+      - app
+volumes:
+  db_data:

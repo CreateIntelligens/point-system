@@ -1,0 +1,9 @@
+# Python cache files
+__pycache__
+*.py[cod]
+*.pyo
+# Cython debug symbols
+cython_debug/
+# Distribution / packaging
+.Python
+build/
