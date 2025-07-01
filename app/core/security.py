@@ -32,3 +32,7 @@ async def get_current_tenant(
     schema_name = f"merchant_{merchant.id}"
     await set_search_path(db, schema_name)
     return TenantContext(merchant, schema_name, db)
+
+async def get_tenant_db(tenant: TenantContext = Depends(get_current_tenant)) -> AsyncSession:
+    """取得已設定好租戶 schema 的資料庫 session"""
+    return tenant.db_session

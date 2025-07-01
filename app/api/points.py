@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from app.db.session import get_db
-from app.core.security import get_current_tenant
+from app.core.security import get_current_tenant, get_tenant_db
 from app.models.point_rule import PointRule
 from app.models.transaction import Transaction
 
@@ -17,9 +17,8 @@ async def create_point_rule(
     name: str,
     rate: float,
     description: str = "",
-    tenant=Depends(get_current_tenant)
+    db: AsyncSession = Depends(get_tenant_db)
 ):
-    db = tenant.db_session
     rule = PointRule(name=name, rate=rate, description=description)
     db.add(rule)
     await db.commit()
@@ -28,9 +27,8 @@ async def create_point_rule(
 
 @router.get("/rules")
 async def list_point_rules(
-    tenant=Depends(get_current_tenant)
+    db: AsyncSession = Depends(get_tenant_db)
 ):
-    db = tenant.db_session
     result = await db.execute(select(PointRule))
     rules = result.scalars().all()
     return {"code": 0, "message": "success", "data": [{"id": r.id, "name": r.name, "rate": r.rate, "description": r.description} for r in rules]}
@@ -41,9 +39,8 @@ async def update_point_rule(
     name: str = None,
     rate: float = None,
     description: str = None,
-    tenant=Depends(get_current_tenant)
+    db: AsyncSession = Depends(get_tenant_db)
 ):
-    db = tenant.db_session
     result = await db.execute(select(PointRule).where(PointRule.id == rule_id))
     rule = result.scalar_one_or_none()
     if not rule:
@@ -61,9 +58,8 @@ async def update_point_rule(
 @router.delete("/rules/{rule_id}")
 async def delete_point_rule(
     rule_id: int,
-    tenant=Depends(get_current_tenant)
+    db: AsyncSession = Depends(get_tenant_db)
 ):
-    db = tenant.db_session
     result = await db.execute(select(PointRule).where(PointRule.id == rule_id))
     rule = result.scalar_one_or_none()
     if not rule:
@@ -80,9 +76,8 @@ async def create_transaction(
     point_rule_id: int,
     amount: float,
     detail: dict = None,
-    tenant=Depends(get_current_tenant)
+    db: AsyncSession = Depends(get_tenant_db)
 ):
-    db = tenant.db_session
     tx = await insert_transaction_with_lock(
         db=db,
         uid=uid,
@@ -106,9 +101,8 @@ async def create_transaction(
 
 @router.get("/transactions")
 async def list_transactions(
-    tenant=Depends(get_current_tenant)
+    db: AsyncSession = Depends(get_tenant_db)
 ):
-    db = tenant.db_session
     result = await db.execute(select(Transaction))
     logs = result.scalars().all()
     return {"code": 0, "message": "success", "data": [
