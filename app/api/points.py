@@ -5,8 +5,9 @@ from app.db.session import get_db
 from app.core.security import get_current_tenant, get_tenant_db
 from app.models.point_rule import PointRule
 from app.models.transaction import Transaction
-
 from app.services.transaction_service import insert_transaction_with_lock
+from app.utils.logger import logger
+from app.utils.timezone import timezone_manager
 
 router = APIRouter(prefix="/api/v1/points", tags=["points"])
 
@@ -19,10 +20,20 @@ async def create_point_rule(
     description: str = "",
     db: AsyncSession = Depends(get_tenant_db)
 ):
+    logger({
+        "action": "create_point_rule",
+        "name": name,
+        "rate": rate,
+        "description": description
+    })
+    
     rule = PointRule(name=name, rate=rate, description=description)
     db.add(rule)
     await db.commit()
     await db.refresh(rule)
+    
+    logger(f"積分規則創建成功: ID={rule.id}, Name={rule.name}")
+    
     return {"code": 0, "message": "created", "data": {"id": rule.id, "name": rule.name, "rate": rule.rate, "description": rule.description}}
 
 @router.get("/rules")
@@ -78,6 +89,14 @@ async def create_transaction(
     detail: dict = None,
     db: AsyncSession = Depends(get_tenant_db)
 ):
+    logger({
+        "action": "create_transaction_via_points",
+        "uid": uid,
+        "point_rule_id": point_rule_id,
+        "amount": amount,
+        "detail": detail
+    })
+    
     tx = await insert_transaction_with_lock(
         db=db,
         uid=uid,
@@ -85,6 +104,9 @@ async def create_transaction(
         amount=amount,
         detail=detail
     )
+    
+    logger(f"交易創建成功: ID={tx.id}, UID={tx.uid}, 餘額={tx.balance}")
+    
     return {
         "code": 0,
         "message": "created",
@@ -95,7 +117,7 @@ async def create_transaction(
             "amount": tx.amount,
             "balance": tx.balance,
             "detail": tx.detail,
-            "created_at": tx.created_at.isoformat()
+            "created_at": timezone_manager.format_datetime(tx.created_at)
         }
     }
 
@@ -113,7 +135,7 @@ async def list_transactions(
             "amount": l.amount,
             "balance": l.balance,
             "detail": l.detail,
-            "created_at": l.created_at.isoformat()
+            "created_at": timezone_manager.format_datetime(l.created_at)
         }
         for l in logs
     ]}

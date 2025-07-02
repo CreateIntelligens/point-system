@@ -12,16 +12,17 @@ services:
       - "5432:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
+
   app:
     build:
       context: .
       dockerfile: docker/Dockerfile
     command: uvicorn app.main:app --host 0.0.0.0 --port 8030 --reload
+    restart: always
     volumes:
       - ./app:/app/app
     environment:
       - DATABASE_URL=postgresql+asyncpg://point_admin:point_pass@db:5432/point_system
-      - TZ=Asia/Taipei
     ports:
       - "8030:8030"
     depends_on:

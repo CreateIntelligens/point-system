@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, DateTime, Boolean, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
-from datetime import datetime
+from app.utils.timezone import timezone_manager
 
 Base = declarative_base()
 
@@ -8,7 +8,7 @@ class Merchant(Base):
     __tablename__ = "merchants"
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, unique=True, nullable=False)
-    created_at = Column(DateTime, default=datetime.now)
+    created_at = Column(DateTime, default=lambda: timezone_manager.now().replace(tzinfo=None))
 
 class MerchantApiKey(Base):
     __tablename__ = "merchant_api_keys"
@@ -18,4 +18,4 @@ class MerchantApiKey(Base):
     expires_at = Column(DateTime, nullable=True)
     scope = Column(String, nullable=True)
     is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.now)
+    created_at = Column(DateTime, default=lambda: timezone_manager.now().replace(tzinfo=None))

@@ -5,3 +5,5 @@ asyncpg
 psycopg2-binary
 gradio
 python-dotenv
+pytz
+pydantic-settings
