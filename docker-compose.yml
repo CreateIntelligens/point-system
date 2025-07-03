@@ -7,11 +7,15 @@ services:
       POSTGRES_USER: point_admin
       POSTGRES_PASSWORD: point_pass
       POSTGRES_DB: point_system
-      TZ: Asia/Taipei
     ports:
       - "5432:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U point_admin -d point_system"]
+      interval: 3s
+      timeout: 5s
+      retries: 10
 
   app:
     build:
@@ -21,12 +25,11 @@ services:
     restart: always
     volumes:
       - ./app:/app/app
-    environment:
-      - DATABASE_URL=postgresql+asyncpg://point_admin:point_pass@db:5432/point_system
     ports:
       - "8030:8030"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 
   gradio:
     build:
