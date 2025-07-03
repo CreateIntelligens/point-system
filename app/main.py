@@ -4,7 +4,7 @@ from app.api.merchants import router as merchants_router
 from app.api.points import router as points_router
 from app.db.session import engine
 from app.db.base import MerchantBase
-from app.utils.logger import logger
+from app.utils.logger import app_logger, logger
 import asyncio
 import traceback
 
@@ -15,9 +15,9 @@ app = FastAPI(
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
-    logger.error(f"Global exception caught: {type(exc).__name__}: {str(exc)}")
-    logger.error(f"Request: {request.method} {request.url}")
-    logger.error(f"Traceback: {traceback.format_exc()}")
+    app_logger.error(f"Global exception caught: {type(exc).__name__}: {str(exc)}")
+    app_logger.error(f"Request: {request.method} {request.url}")
+    app_logger.error(f"Traceback: {traceback.format_exc()}")
 
     return JSONResponse(
         status_code=500,
