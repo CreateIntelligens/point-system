@@ -5,41 +5,41 @@ load_dotenv(dotenv_path="app/.env")
 import asyncio
 import random
 
-# @pytest.mark.asyncio
-# async def test_api_flow():
-#     async with AsyncClient(base_url="http://localhost:8030") as client:
-#         # 1. register_merchant
-#         resp = await client.post("/api/v1/merchants/register", params={"name": "test_merchant2"})
-#         assert resp.status_code == 200
-#         merchant_id = resp.json()["data"]["id"]
+@pytest.mark.asyncio
+async def test_api_flow():
+    async with AsyncClient(base_url="http://localhost:8030") as client:
+        # 1. register_merchant
+        resp = await client.post("/api/v1/merchants/register", params={"name": "test_merchant2"})
+        assert resp.status_code == 200
+        merchant_id = resp.json()["data"]["id"]
 
-#         # 2. create_api_key
-#         resp = await client.post(f"/api/v1/merchants/{merchant_id}/apikey")
-#         assert resp.status_code == 200
-#         api_key = resp.json()["data"]["api_key"]
+        # 2. create_api_key
+        resp = await client.post(f"/api/v1/merchants/{merchant_id}/apikey")
+        assert resp.status_code == 200
+        api_key = resp.json()["data"]["api_key"]
 
-#         # 3. create_point_rule
-#         headers = {"x-api-key": api_key}
-#         rule_payload = {"name": "test_rule2", "rate": 2.0, "description": "desc2"}
-#         resp = await client.post("/api/v1/points/rules", params=rule_payload, headers=headers)
-#         assert resp.status_code == 200
-#         rule_id = resp.json()["data"]["id"]
+        # 3. create_point_rule
+        headers = {"x-api-key": api_key}
+        rule_payload = {"name": "test_rule2", "rate": 2.0, "description": "desc2"}
+        resp = await client.post("/api/v1/points/rules", params=rule_payload, headers=headers)
+        assert resp.status_code == 200
+        rule_id = resp.json()["data"]["id"]
 
-#         # 4. create_transaction 併發測試
-#         async def create_tx():
-#             for _ in range(100):
-#                 uid = str(random.randint(1, 5))
-#                 amount = random.randint(-10, 10)
-#                 tx_payload = {
-#                     "uid": uid,
-#                     "point_rule_id": rule_id,
-#                     "amount": amount,
-#                     "detail": {}
-#                 }
-#                 r = await client.post("/api/v1/points/transactions", params=tx_payload, headers=headers)
-#                 assert r.status_code == 200
+        # 4. create_transaction 併發測試
+        async def create_tx():
+            for _ in range(100):
+                uid = str(random.randint(1, 5))
+                amount = random.randint(-10, 10)
+                tx_payload = {
+                    "uid": uid,
+                    "point_rule_id": rule_id,
+                    "amount": amount,
+                    "detail": {}
+                }
+                r = await client.post("/api/v1/points/transactions", params=tx_payload, headers=headers)
+                assert r.status_code == 200
 
-#         await asyncio.gather(*[create_tx() for _ in range(10)])
+        await asyncio.gather(*[create_tx() for _ in range(10)])
 
 @pytest.mark.asyncio
 async def test_transaction_balance_flow(capfd):

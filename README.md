@@ -32,6 +32,7 @@
 - 以 Python Gradio 實作，與 FastAPI 共用部分 service 層
 
 ## Docker 部署
+- app/ 新增.env
 - 使用 `docker-compose` 管理 FastAPI、PostgreSQL、Gradio
 - 可單獨測試（unit test、integration test）
 
