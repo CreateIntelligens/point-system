@@ -1,6 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from sqlalchemy import asc, desc
+from typing import Optional, Literal
 from app.db.session import get_db
 from app.core.security import get_current_tenant, get_tenant_db
 from app.models.point_rule import PointRule
@@ -30,7 +32,6 @@ async def create_point_rule(
     rule = PointRule(name=name, rate=rate, description=description)
     db.add(rule)
     await db.commit()
-    await db.refresh(rule)
     
     logger(f"積分規則創建成功: ID={rule.id}, Name={rule.name}")
     
@@ -63,7 +64,6 @@ async def update_point_rule(
     if description is not None:
         rule.description = description
     await db.commit()
-    await db.refresh(rule)
     return {"code": 0, "message": "updated", "data": {"id": rule.id, "name": rule.name, "rate": rule.rate, "description": rule.description}}
 
 @router.delete("/rules/{rule_id}")
@@ -123,9 +123,51 @@ async def create_transaction(
 
 @router.get("/transactions")
 async def list_transactions(
+    sort: Optional[str] = Query(
+        default=None,
+        description="排序方式：多個排序條件用逗號分隔，如 '-id,uid,point_rule_id'。支援欄位：id、uid、point_rule_id，加 '-' 前綴表示降序"
+    ),
     db: AsyncSession = Depends(get_tenant_db)
 ):
-    result = await db.execute(select(Transaction))
+    """
+    獲取交易記錄列表
+    
+    - **sort**: 排序參數，支援多重排序，用逗號分隔：
+        - 支援欄位：`id`、`uid`、`point_rule_id`
+        - 降序請加 `-` 前綴，如：`-id`
+        - 範例：`-id,uid,point_rule_id`
+        - 每個欄位只取第一次出現的值
+    """
+    query = select(Transaction)
+    
+    # 添加排序邏輯
+    if sort:
+        sort_fields = [s.strip() for s in sort.split(",")]
+        seen_fields = set()
+        order_clauses = []
+        
+        for field in sort_fields:
+            if field.startswith("-"):
+                field_name = field[1:]
+                direction = desc
+            else:
+                field_name = field
+                direction = asc
+            
+            # 只處理第一次出現的欄位
+            if field_name not in seen_fields and field_name in ["id", "uid", "point_rule_id"]:
+                seen_fields.add(field_name)
+                if field_name == "id":
+                    order_clauses.append(direction(Transaction.id))
+                elif field_name == "uid":
+                    order_clauses.append(direction(Transaction.uid))
+                elif field_name == "point_rule_id":
+                    order_clauses.append(direction(Transaction.point_rule_id))
+        
+        if order_clauses:
+            query = query.order_by(*order_clauses)
+
+    result = await db.execute(query)
     logs = result.scalars().all()
     return {"code": 0, "message": "success", "data": [
         {

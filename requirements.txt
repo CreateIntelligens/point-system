@@ -7,3 +7,6 @@ gradio
 python-dotenv
 pytz
 pydantic-settings
+pytest
+pytest-asyncio
+httpx

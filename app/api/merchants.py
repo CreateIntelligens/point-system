@@ -27,7 +27,6 @@ async def register_merchant(name: str, db: AsyncSession = Depends(get_db)):
     db.add(merchant)
     try:
         await db.commit()
-        await db.refresh(merchant)
     except IntegrityError:
         await db.rollback()
         logger(f"商戶註冊失敗，名稱已存在: {name}", "ERROR")
@@ -87,7 +86,6 @@ async def create_api_key(merchant_id: int, expires_in_days: int = 30, db: AsyncS
     )
     db.add(key)
     await db.commit()
-    await db.refresh(key)
     
     logger(f"API 金鑰創建成功: Merchant={merchant_id}, Key ID={key.id}")
     

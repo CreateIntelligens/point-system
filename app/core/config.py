@@ -1,6 +1,7 @@
 import os
 from typing import Optional
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
+from functools import lru_cache
 
 class Settings(BaseSettings):
     # 應用設定
@@ -18,9 +19,10 @@ class Settings(BaseSettings):
     # 資料庫設定
     database_url: Optional[str] = None
     
-    class Config:
-        env_file = "app/.env"
-        case_sensitive = False
+    model_config = SettingsConfigDict(env_file="app/.env", case_sensitive=False)
 
-# 全域設定實例
-settings = Settings()
+@lru_cache()
+def get_settings():
+    return Settings()
+
+settings = get_settings()
